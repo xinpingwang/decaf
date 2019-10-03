@@ -16,7 +16,7 @@ class Net(object):
     """
 
     def __init__(self):
-        self._graph = nx.Graph()
+        self._graph = nx.DiGraph()
         self._blobs = defaultdict(Blob)
         self._layers = {}
         self._needs = {}
@@ -76,31 +76,33 @@ class Net(object):
         #   need_backward: whether the backward pass needs to be carried out
         #   need_bottom_diff: whether the gradient w.r.t. to be bottom layer needs to be carried out.
         for name in topological_order:
-            pred_need_backward = any(self._graph[p]['need_backward'] for p in self._graph.predecessors(name))
+            pred_need_backward = any(self._graph.nodes[p]['need_backward'] for p in self._graph.predecessors(name))
 
             if name in self._layers:
                 # see if a layer needs backward operation. A layer needs backward operation if
                 # (1) it has parameters, or
                 # (2) any of its predecessors needs backward operation.
                 if self._layers[name].param() or pred_need_backward:
-                    self._layers[name]['need_backward'] = True
+                    self._graph.nodes[name]['need_backward'] = True
                 else:
-                    self._graph[name]['need_backward'] = False
+                    self._graph.nodes[name]['need_backward'] = False
                 # See if a layer needs to compute its bottom diff. A layer need to compute its bottom diff if any of its
                 # predecessors needs backward operation.
                 if pred_need_backward:
-                    self._graph[name]['need_bottom_diff'] = True
+                    self._graph.nodes[name]['need_bottom_diff'] = True
                 else:
-                    self._graph[name]['need_bottom_diff'] = False
+                    self._graph.nodes[name]['need_bottom_diff'] = False
             else:
                 # see if a blob needs backward operation. This is only used so we can verify further layer.
-                self._graph[name]['need_backward'] = pred_need_backward
+                self._graph.nodes[name]['need_backward'] = pred_need_backward
         # create the order to run forward and backward passes
+        # topological_order is a iterator, after the above loop, it should be reinitialize
+        topological_order = nx.topological_sort(self._graph)
         layer_order = [layer_name for layer_name in topological_order if layer_name in self._layers]
         self._forward_order = [(n, self._layers[n], self._needs[n], self._provides[n]) for n in layer_order]
         self._backward_order = [(n, self._layers[n], self._needs[n], self._provides[n],
-                                 self._graph[n]['need_bottom_diff'])
-                                for n in layer_order[::-1] if self._graph[n]['need_backward']]
+                                 self._graph.nodes[n]['need_bottom_diff'])
+                                for n in layer_order[::-1] if self._graph.nodes[n]['need_backward']]
         # store all the parameters
         self._params = []
         for name in layer_order:
@@ -123,12 +125,12 @@ class Net(object):
             raise InvalidNetworkError('The network is not a DAG')
         for blob_name in self._blobs:
             # check if every blob has predecessors, and each predecessor is a valid layer.
-            predecessors = self._graph.predecessors(blob_name)
+            predecessors = list(self._graph.predecessors(blob_name))
             if len(predecessors) != 1:
                 raise InvalidNetworkError('Blob {} has no source layer or multiple source layers.'.format(blob_name))
             if predecessors[0] not in self._layers:
                 raise InvalidNetworkError('Blob {} has a source that is not a layer.'.format(blob_name))
-            successors = self._graph.successors(blob_name)
+            successors = list(self._graph.successors(blob_name))
             if len(successors) > 1:
                 raise InvalidNetworkError('Blob {} has multiple successors.'.format(blob_name))
 
