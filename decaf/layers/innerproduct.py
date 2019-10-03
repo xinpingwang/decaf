@@ -13,13 +13,13 @@ class InnerProductLayer(Layer):
         self._num_output = self.spec.get('num_output', 0)
         if self._num_output <= 0:
             raise InvalidSpecError('Incorrect ou unspecified num_output for {}'.format(self.name))
-        self._w = Blob()
+        self._weight = Blob()
         self._has_bias = self.spec.get('bias', True)
         if self._has_bias:
-            self._b = Blob()
-            self._param = [self._w, self._b]
+            self._bias = Blob()
+            self._param = [self._weight, self._bias]
         else:
-            self._param = [self._w]
+            self._param = [self._weight]
 
     def forward(self, bottom, top):
         """Computes the forward pass"""
@@ -27,11 +27,11 @@ class InnerProductLayer(Layer):
         bottom_data.shape = (bottom_data.shape[0], bottom_data.shape[1:])
         top[0].resize((bottom_data.shape[0], self._num_output), bottom_data.dtype)
         top_data = top[0].data
-        self._w.resize((bottom_data.shape[1], self._num_output), bottom_data.dtype)
-        np.dot(bottom_data, self._w.data, out=top_data)
+        self._weight.resize((bottom_data.shape[1], self._num_output), bottom_data.dtype)
+        blasdot.dot(bottom_data, self._weight.data, out=top_data)
         if self._has_bias:
-            self._b.resize(self._num_output, bottom_data.dtype)
-            top_data += self._b
+            self._bias.resize(self._num_output, bottom_data.dtype)
+            top_data += self._bias
 
     def backward(self, bottom, top, need_bottom_diff):
         """Computes the backward pass."""
@@ -39,19 +39,19 @@ class InnerProductLayer(Layer):
         bottom_data = bottom[0].data.view()
         bottom_data.shape = (bottom_data.shape[0], bottom_data.shape[1:])
 
-        self._w.init_diff()
-        blasdot.dot(bottom_data.T, top_diff, out=self._w.diff)
+        self._weight.init_diff()
+        blasdot.dot(bottom_data.T, top_diff, out=self._weight.diff)
         if self._has_bias:
-            self._b.init_diff()
-            self._b.diff[:] = top_diff.sum(0)
+            self._bias.init_diff()
+            self._bias.diff[:] = top_diff.sum(0)
         if need_bottom_diff:
             bottom[0].init_diff()
             bottom_diff = bottom[0].diff.view()
             bottom_diff.shape = (bottom_diff.shape[0], bottom_diff.shape[1:])
-            blasdot.dot(top_diff, self._w.diff.T, out=bottom_diff)
+            blasdot.dot(top_diff, self._weight.diff.T, out=bottom_diff)
 
     def update(self):
         """Updates the parameters"""
-        self._w.data += self._w.diff
+        self._weight.data += self._weight.diff
         if self._has_bias:
-            self._b.data += self._b.diff
+            self._bias.data += self._bias.diff

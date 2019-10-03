@@ -20,6 +20,8 @@ class NdArrayDataLayer(DataLayer):
         """
         Generates the data.
         """
+        if len(top) != len(self._sources):
+            raise ValueError('The number of sources and output blobs should be the same')
         for top_blob, sources in zip(top, self._sources):
             top_blob.mirror(sources)
         return 0.

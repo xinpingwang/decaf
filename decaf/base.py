@@ -138,7 +138,7 @@ class DataLayer(Layer):
         """
         The data layer has no parameter, and the update() function should not be called.
         """
-        raise DecafError("You should not reach this.")
+        pass
 
 
 class LossLayer(Layer):
@@ -155,9 +155,6 @@ class LossLayer(Layer):
 
     def update(self):
         pass
-
-    def param(self):
-        return []
 
 
 class Solver(object):
