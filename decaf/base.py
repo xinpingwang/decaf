@@ -35,6 +35,12 @@ class Blob(object):
         # layers.
         self.data = input_array.view()
 
+    def has_data(self):
+        return self.data is not None
+
+    def has_diff(self):
+        return self.diff is not None
+
     def resize(self, shape, dtype):
         if self.data.shape == shape and self.data.dtype == dtype:
             pass
@@ -44,12 +50,25 @@ class Blob(object):
             logging.info('Blob resized to {0} dtype {1}'.format(str(shape), str(dtype)))
             self.data = np.zeros(shape, dtype=dtype)
 
+    def init_data(self, shape, dtype):
+        """
+        Initialize the data matrix if necessary.
+        """
+        if self.has_data() and self.data.shape == shape and self.data.dtype == dtype:
+            self.data[:] = 0
+        else:
+            self.data = np.zeros(shape, dtype)
+        return self.data
+
     def init_diff(self):
         """
         Initialize the diff in the same format as data
-        :return: diff
+
+        Returns diff for easy access.
         """
-        if self.diff and self.diff.shape == self.data.shape and self.diff.dtype == self.data.dtype:
+        if not self.has_data():
+            raise ValueError('The data should be initialized first!')
+        if self.has_diff() and self.diff.shape == self.data.shape and self.diff.dtype == self.data.dtype:
             self.diff[:] = 0
         else:
             self.diff = np.zeros_like(self.data)
@@ -176,6 +195,7 @@ class Regularizer(object):
     """
     This is the class that implements the regularization terms.
     """
+
     def __init__(self, **kwargs):
         """
         Initializes a regularizer. A regularizer need a necessary keyword 'weight'
