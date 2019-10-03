@@ -1,0 +1,8 @@
+# ide config file
+.idea/
+
+# compiled
+*.pyc
+
+# macOS specified
+.DS_Store
