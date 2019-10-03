@@ -25,40 +25,49 @@ class Blob(object):
 
     def __init__(self, shape=None, dtype=None):
         if shape is None and dtype is None:
-            self.data = None
+            self._data = None
         else:
-            self.data = np.zeros(shape, dtype=dtype)
-        self.diff = None
+            self._data = np.zeros(shape, dtype=dtype)
+        self._diff = None
 
     def mirror(self, input_array):
         # Create the data as a view of the input array. This is useful to save space and avoid duplication for data
         # layers.
-        self.data = input_array.view()
+        self._data = input_array.view()
 
     def has_data(self):
-        return self.data is not None
+        return self._data is not None
+
+    def data(self):
+        return self._data.view()
 
     def has_diff(self):
-        return self.diff is not None
+        return self._diff is not None
+
+    def diff(self):
+        return self._diff.view()
+
+    def update(self):
+        self._data += self._diff
 
     def resize(self, shape, dtype):
-        if self.data.shape == shape and self.data.dtype == dtype:
+        if self._data.shape == shape and self._data.dtype == dtype:
             pass
         else:
             # Blob resize should not happen often. If it happens, we log it
             # so the user can know if multiple resize take place.
             logging.info('Blob resized to {0} dtype {1}'.format(str(shape), str(dtype)))
-            self.data = np.zeros(shape, dtype=dtype)
+            self._data = np.zeros(shape, dtype=dtype)
 
     def init_data(self, shape, dtype):
         """
         Initialize the data matrix if necessary.
         """
-        if self.has_data() and self.data.shape == shape and self.data.dtype == dtype:
-            self.data[:] = 0
+        if self.has_data() and self._data.shape == shape and self._data.dtype == dtype:
+            self._data[:] = 0
         else:
-            self.data = np.zeros(shape, dtype)
-        return self.data
+            self._data = np.zeros(shape, dtype)
+        return self._data
 
     def init_diff(self):
         """
@@ -68,11 +77,11 @@ class Blob(object):
         """
         if not self.has_data():
             raise ValueError('The data should be initialized first!')
-        if self.has_diff() and self.diff.shape == self.data.shape and self.diff.dtype == self.data.dtype:
-            self.diff[:] = 0
+        if self.has_diff() and self._diff.shape == self._data.shape and self._diff.dtype == self._data.dtype:
+            self._diff[:] = 0
         else:
-            self.diff = np.zeros_like(self.data)
-        return self.diff
+            self._diff = np.zeros_like(self._data)
+        return self._diff
 
 
 class Layer(object):

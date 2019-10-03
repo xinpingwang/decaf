@@ -11,8 +11,8 @@ class SquaredLossLayer(LossLayer):
         Forward emits the loss, and computes the gradient as well.
         """
         diff = bottom[0].init_diff()
-        diff[:] = bottom[0].data
-        diff -= bottom[1].data
+        diff[:] = bottom[0].data()
+        diff -= bottom[1].data()
         diff *= 2
         loss = np.dot(diff.flat, diff.flat)
         return loss
@@ -36,10 +36,10 @@ class MultinomialLogisticLossLayer(LossLayer):
         self._prob = Blob()
 
     def forward(self, bottom, top):
-        self._prob.resize(bottom[0].data.shape, bottom[0].data.dtype)
+        self._prob.resize(bottom[0].data().shape, bottom[0].data().dtype)
         # compute normalized prob
-        prob_data = self._prob.data
-        prob_data[:] = bottom[0].data
+        prob_data = self._prob.data()
+        prob_data[:] = bottom[0].data()
         prob_data -= self._prob.max(axis=1)[:, np.newaxis]
         logexp.exp(self._prob, out=self._prob)
         self._prob /= prob_data.sum(axis=1)[:, np.newaxis]
@@ -48,14 +48,14 @@ class MultinomialLogisticLossLayer(LossLayer):
         diff[:] = prob_data
         logexp.log(prob_data, out=prob_data)
 
-        if bottom[1].data.ndim == 1:
+        if bottom[1].data().ndim == 1:
             # The labels are given as a sparse vector.
-            diff[np.arange(diff.shape[0]), bottom[1].data] -= 1.
-            return -prob_data[np.arange(diff.shape[0]), bottom[1].data].sum()
+            diff[np.arange(diff.shape[0]), bottom[1].data()] -= 1.
+            return -prob_data[np.arange(diff.shape[0]), bottom[1].data()].sum()
         else:
             # The labels are given as a dense 0-1 matrix.
-            diff -= bottom[1].data
-            return -np.dot(prob_data.flat, bottom[1].data.flat)
+            diff -= bottom[1].data()
+            return -np.dot(prob_data.flat, bottom[1].data().flat)
 
     def backward(self, bottom, top, need_bottom_diff):
         """Everything has been done in forward. Nothing needs to be done here."""

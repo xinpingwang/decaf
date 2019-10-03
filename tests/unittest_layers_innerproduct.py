@@ -24,14 +24,14 @@ class TestLayerInnerproduct(unittest.TestCase):
                 decaf_layer = innerproduct.InnerProductLayer(name='ip', num_output=num_output)
                 decaf_layer.forward([blob], [top_blob])
                 self.assertTrue(top_blob.has_data())
-                self.assertEqual(top_blob.data.shape[0], blob.data.shape[0])
-                self.assertEqual(top_blob.data.shape[1], num_output)
+                self.assertEqual(top_blob.data().shape[0], blob.data().shape[0])
+                self.assertEqual(top_blob.data().shape[1], num_output)
                 # test backward
                 top_diff = top_blob.init_diff()
                 top_diff[:] = 1.
                 decaf_layer.backward([blob], [top_blob], need_bottom_diff=True)
                 self.assertTrue(blob.has_diff())
-                self.assertEqual(blob.diff.shape, blob.data.shape)
+                self.assertEqual(blob.diff().shape, blob.data().shape)
 
 
 if __name__ == '__main__':
