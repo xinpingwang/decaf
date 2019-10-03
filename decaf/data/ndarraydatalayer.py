@@ -22,3 +22,4 @@ class NdArrayDataLayer(DataLayer):
         """
         for top_blob, sources in zip(top, self._sources):
             top_blob.mirror(sources)
+        return 0.
