@@ -158,3 +158,18 @@ class LossLayer(Layer):
 
     def param(self):
         return []
+
+
+class Solver(object):
+    """
+    This is the very basic form of the solver.
+    """
+
+    def __init__(self, **kwargs):
+        self.spec = kwargs
+
+    def solve(self, net):
+        """
+        The solve function takes a net as an input, and optimizes its parameters.
+        """
+        raise NotImplementedError
