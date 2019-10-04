@@ -67,11 +67,12 @@ class LBFGSSolver(Solver):
         """
         # first, run an execute pass to initialize all the parameters
         self._net = net
-        net.execute()
+        initial_loss = net.execute()
+        logging.info('Initial loss: {}'.format(initial_loss))
         self._collect_params(True)
         # now, run LBFGS
-        result = _FMIN(lambda x: self.obj(x), self._param.data(), args=[self], **self._lbfgs_args)
+        result = _FMIN(lambda x: self.obj(x), self._param.data(), **self._lbfgs_args)
         # put the optimized result to the net
         self._param.data()[:] = result[0]
         self._distribute_params()
-        logging.info('Final function value: {}', result[1])
+        logging.info('Final function value: {}'.format(result[1]))
