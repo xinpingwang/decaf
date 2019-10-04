@@ -67,7 +67,7 @@ class Blob(object):
             self._data[:] = 0
         else:
             self._data = np.zeros(shape, dtype)
-        return self._data
+        return self.data()
 
     def init_diff(self):
         """
@@ -80,8 +80,8 @@ class Blob(object):
         if self.has_diff() and self._diff.shape == self._data.shape and self._diff.dtype == self._data.dtype:
             self._diff[:] = 0
         else:
-            self._diff = np.zeros_like(self._data)
-        return self._diff
+            self._diff = np.zeros(self._data.shape, self._data.dtype)
+        return self.diff()
 
 
 class Layer(object):
