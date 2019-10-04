@@ -74,7 +74,7 @@ class Net(object):
         # For efficiency reasons, we will see for each layer, whether the backward operation needs to be carried out.
         # This is stored in two parameters:
         #   need_backward: whether the backward pass needs to be carried out
-        #   need_bottom_diff: whether the gradient w.r.t. to be bottom layer needs to be carried out.
+        #   propagate_down: whether the gradient w.r.t. to be bottom layer needs to be carried out.
         for name in topological_order:
             pred_need_backward = any(self._graph.nodes[p]['need_backward'] for p in self._graph.predecessors(name))
 
@@ -89,9 +89,9 @@ class Net(object):
                 # See if a layer needs to compute its bottom diff. A layer need to compute its bottom diff if any of its
                 # predecessors needs backward operation.
                 if pred_need_backward:
-                    self._graph.nodes[name]['need_bottom_diff'] = True
+                    self._graph.nodes[name]['propagate_down'] = True
                 else:
-                    self._graph.nodes[name]['need_bottom_diff'] = False
+                    self._graph.nodes[name]['propagate_down'] = False
             else:
                 # see if a blob needs backward operation. This is only used so we can verify further layer.
                 self._graph.nodes[name]['need_backward'] = pred_need_backward
@@ -101,7 +101,7 @@ class Net(object):
         layer_order = [layer_name for layer_name in topological_order if layer_name in self._layers]
         self._forward_order = [(n, self._layers[n], self._needs[n], self._provides[n]) for n in layer_order]
         self._backward_order = [(n, self._layers[n], self._needs[n], self._provides[n],
-                                 self._graph.nodes[n]['need_bottom_diff'])
+                                 self._graph.nodes[n]['propagate_down'])
                                 for n in layer_order[::-1] if self._graph.nodes[n]['need_backward']]
         # store all the parameters
         self._params = []
@@ -143,8 +143,8 @@ class Net(object):
         for _, layer, bottom, top in self._forward_order:
             loss += layer.forward(bottom, top)
         # the backward pass
-        for _, layer, bottom, top, need_bottom_diff in self._backward_order:
-            layer.backward(bottom, top, need_bottom_diff)
+        for _, layer, bottom, top, propagate_down in self._backward_order:
+            layer.backward(bottom, top, propagate_down)
         return loss
 
     def update(self):

@@ -42,7 +42,7 @@ class InnerProductLayer(Layer):
             output += self._bias.data()
         return 0.
 
-    def backward(self, bottom, top, need_bottom_diff):
+    def backward(self, bottom, top, propagate_down):
         """Computes the backward pass."""
         top_diff = top[0].diff()
         features = bottom[0].data()
@@ -56,7 +56,7 @@ class InnerProductLayer(Layer):
             bias_diff = self._bias.init_diff()
             bias_diff[:] = top_diff.sum(0)
         # if necessary, compute the bottom Blob gradient
-        if need_bottom_diff:
+        if propagate_down:
             bottom_diff = bottom[0].init_diff()
             if bottom_diff.ndim > 2:
                 bottom_diff.shape = (bottom_diff.shape[0], np.prod(bottom_diff.shape[1:]))

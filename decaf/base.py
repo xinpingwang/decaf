@@ -115,14 +115,14 @@ class Layer(object):
         """
         raise NotImplementedError
 
-    def backward(self, bottom, top, need_bottom_diff):
+    def backward(self, bottom, top, propagate_down):
         """
         Computes the backward pass.
 
         Input:
             bottom: the data at the bottom
             top: the data at top
-            need_bottom_diff: if set False, the gradient w.r.t. the bottom blobs does not need to be computed.
+            propagate_down: if set False, the gradient w.r.t. the bottom blobs does not need to be computed.
         """
         raise NotImplementedError
 
@@ -154,7 +154,7 @@ class DataLayer(Layer):
         """
         raise NotImplementedError
 
-    def backward(self, bottom, top, need_bottom_diff):
+    def backward(self, bottom, top, propagate_down):
         """
         No gradient needs to be computed for data.
 
@@ -178,7 +178,7 @@ class LossLayer(Layer):
     def forward(self, bottom, top):
         raise NotImplementedError
 
-    def backward(self, bottom, top, need_bottom_diff):
+    def backward(self, bottom, top, propagate_down):
         raise NotImplementedError
 
     def update(self):

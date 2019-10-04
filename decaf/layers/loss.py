@@ -17,7 +17,7 @@ class SquaredLossLayer(LossLayer):
         loss = np.dot(diff.flat, diff.flat)
         return loss
 
-    def backward(self, bottom, top, need_bottom_diff):
+    def backward(self, bottom, top, propagate_down):
         """Everything has been done in forward. Nothing needs to be done here."""
         pass
 
@@ -57,6 +57,6 @@ class MultinomialLogisticLossLayer(LossLayer):
             diff -= bottom[1].data()
             return -np.dot(prob_data.flat, bottom[1].data().flat)
 
-    def backward(self, bottom, top, need_bottom_diff):
+    def backward(self, bottom, top, propagate_down):
         """Everything has been done in forward. Nothing needs to be done here."""
         pass
