@@ -25,7 +25,7 @@ def log(mat, out=None):
     Note that if there are negative values in the input, this function does not throw an error. Handle these cases with
     care.
     """
-    if out in None:
+    if out is None:
         out = np.empty_like(mat)
     # finfo Machine limits for floating point types.
     np.clip(mat, np.finfo(mat.dtype).tiny, np.inf, out=out)
