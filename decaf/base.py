@@ -217,3 +217,20 @@ class Regularizer(object):
         Compute the regularization term from the blob's data field, and add the regularization term to its diff directly
         """
         raise NotImplementedError
+
+
+class Filler(object):
+    """
+    This is the class that implements util functions to fill a blob.
+
+    A filler implements the fill() function that takes a blob as the input, and fills the blob's data() field.
+    """
+
+    def __init__(self, **kwargs):
+        """
+        simply get the spec.
+        """
+        self.spec = kwargs
+
+    def fill(self, mat):
+        raise NotImplementedError
