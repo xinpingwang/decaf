@@ -1,5 +1,5 @@
 from decaf.base import Layer, Blob
-from decaf.base import InvalidSpecError
+from decaf.base import InvalidLayerError
 from decaf.util import blasdot
 import numpy as np
 
@@ -13,7 +13,7 @@ class InnerProductLayer(Layer):
         Layer.__init__(self, **kwargs)
         self._num_output = self.spec.get('num_output', 0)
         if self._num_output <= 0:
-            raise InvalidSpecError('Incorrect ou unspecified num_output for {}'.format(self.name))
+            raise InvalidLayerError('Incorrect ou unspecified num_output for {}'.format(self.name))
         self._weight = Blob()
         self._reg = self.spec.get('reg', None)
         self._has_bias = self.spec.get('bias', True)
@@ -60,9 +60,9 @@ class InnerProductLayer(Layer):
             bottom_diff = bottom[0].init_diff()
             if bottom_diff.ndim > 2:
                 bottom_diff.shape = (bottom_diff.shape[0], np.prod(bottom_diff.shape[1:]))
-            blasdot.dot(top_diff, weight_diff.T, out=bottom_diff)
+            blasdot.dot(top_diff, self._weight.data().T, out=bottom_diff)
         if self._reg is not None:
-            return self._reg.reg(self._weight)
+            return self._reg.reg(self._weight, features.shape[0])
         else:
             return 0.
 

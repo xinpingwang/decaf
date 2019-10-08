@@ -139,12 +139,14 @@ class Net(object):
     def execute(self):
         """Execute one round of the networkx."""
         # the forward pass. we will also accumulate the loss function
+        if not self._finished:
+            raise DecafError('Call finish() before you use the network.')
         loss = 0.
         for _, layer, bottom, top in self._forward_order:
-            loss += layer.forward(bottom, top)
+            layer.forward(bottom, top)
         # the backward pass
         for _, layer, bottom, top, propagate_down in self._backward_order:
-            layer.backward(bottom, top, propagate_down)
+            loss += layer.backward(bottom, top, propagate_down)
         return loss
 
     def update(self):

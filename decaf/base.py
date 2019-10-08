@@ -6,7 +6,13 @@ class DecafError(Exception):
     pass
 
 
-class InvalidSpecError(DecafError):
+class InvalidLayerError(DecafError):
+    """The error when an invalid spec is passed to a layer."""
+    pass
+
+
+class InvalidNetError(DecafError):
+    """The error raised when the network does not pass validation."""
     pass
 
 
@@ -23,28 +29,34 @@ class Blob(object):
     to be computed.
     """
 
-    def __init__(self, shape=None, dtype=None):
-        if shape is None and dtype is None:
-            self._data = None
-        else:
-            self._data = np.zeros(shape, dtype=dtype)
+    def __init__(self, shape=None, dtype=np.float64, filler=None):
+        self._data = None
         self._diff = None
+        self._filler = filler
+        if shape is not None:
+            self.init_data(shape, dtype)
 
-    def mirror(self, input_array):
+    def mirror(self, input_array, shape=None):
         # Create the data as a view of the input array. This is useful to save space and avoid duplication for data
         # layers.
         self._data = input_array.view()
+        if shape is not None:
+            self._data.shape = shape
 
     def has_data(self):
+        """Checks if the blob has data."""
         return self._data is not None
 
     def data(self):
+        """Returns a view of the data."""
         return self._data.view()
 
     def has_diff(self):
+        """Checks if the blob has diff."""
         return self._diff is not None
 
     def diff(self):
+        """Return a view of the diff."""
         return self._diff.view()
 
     def update(self):
@@ -59,14 +71,17 @@ class Blob(object):
             logging.info('Blob resized to {0} dtype {1}'.format(str(shape), str(dtype)))
             self._data = np.zeros(shape, dtype=dtype)
 
-    def init_data(self, shape, dtype):
+    def init_data(self, shape, dtype=np.float64):
         """
-        Initialize the data matrix if necessary.
+        Initialize the data matrix if necessary. The filler will be always called even if no reallocation of data takes
+        place.
         """
         if self.has_data() and self._data.shape == shape and self._data.dtype == dtype:
             self._data[:] = 0
         else:
             self._data = np.zeros(shape, dtype)
+        if self._filler is not None:
+            self._filler.fill(self._data)
         return self.data()
 
     def init_diff(self):
@@ -109,9 +124,7 @@ class Layer(object):
 
         Input:
             bottom: the data at the bottom.
-        Output:
-            loss: the loss being generated in this layer. Note that if your layer does not generate any loss, you
-            should still return 0.
+            top: the top-layer output.
         """
         raise NotImplementedError
 
@@ -123,6 +136,9 @@ class Layer(object):
             bottom: the data at the bottom
             top: the data at top
             propagate_down: if set False, the gradient w.r.t. the bottom blobs does not need to be computed.
+        Output:
+            loss: the loss being generated in this layer. Note that if your layer does not generate any loss, you
+            should still return 0.
         """
         raise NotImplementedError
 
@@ -171,15 +187,20 @@ class DataLayer(Layer):
 
 class LossLayer(Layer):
     """
-    A Layer that implements loss. The forward pass of the loss layer will produce the loss, and the backward pass will
-    compute the gradient based on the network output and the training data.
+    A Layer that implements loss. Usually, the forward pas of the loss does the actual computation of both the loss and
+    the gradients, and the backward pass will simply return the loss value. The loss layer should not accept any blobs
+    on its top.
     """
+
+    def __init__(self, **kwargs):
+        Layer.__init__(self, **kwargs)
+        self._loss = 0.
 
     def forward(self, bottom, top):
         raise NotImplementedError
 
     def backward(self, bottom, top, propagate_down):
-        raise NotImplementedError
+        return self._loss
 
     def update(self):
         pass
@@ -212,7 +233,7 @@ class Regularizer(object):
         self.spec = kwargs
         self._weight = self.spec['weight']
 
-    def reg(self, blob):
+    def reg(self, blob, num_data):
         """
         Compute the regularization term from the blob's data field, and add the regularization term to its diff directly
         """
