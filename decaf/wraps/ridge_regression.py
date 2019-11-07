@@ -6,7 +6,9 @@ from decaf.layers import core_layers, regularization
 from decaf.optimization import core_solvers
 
 
-def ridge_regression(features, target, reg_weight=0.):
+def ridge_regression(features: np.ndarray,
+                     target: np.ndarray,
+                     reg_weight: float = 0.):
     """
     Carry out a ridge regression given features and target value
 

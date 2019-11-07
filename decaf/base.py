@@ -1,5 +1,8 @@
 import logging
 import numpy as np
+import typing
+
+from decaf import net
 
 
 class DecafError(Exception):
@@ -16,6 +19,24 @@ class InvalidNetError(DecafError):
     pass
 
 
+class Filler(object):
+    """
+    This is the class that implements util functions to fill a blob.
+
+    A filler implements the fill() function that takes a blob as the input, and fills the blob's data() field.
+    """
+
+    def __init__(self, **kwargs):
+        """
+        simply get the spec.
+        """
+        self.spec: dict = kwargs
+
+    def fill(self,
+             mat: np.ndarray):
+        raise NotImplementedError
+
+
 class Blob(object):
     """
     Blob is the data structure that holds a piece of numpy array as well as its gradient so that we can accumulate and
@@ -29,19 +50,33 @@ class Blob(object):
     to be computed.
     """
 
-    def __init__(self, shape=None, dtype=np.float64, filler=None):
-        self._data = None
-        self._diff = None
-        self._filler = filler
+    def __init__(self,
+                 shape: typing.Optional[tuple] = None,
+                 dtype: np.dtype = np.float64,
+                 filler: typing.Optional[Filler] = None):
+        self._data: typing.Optional[np.ndarray] = None
+        self._diff: typing.Optional[np.ndarray] = None
+        self._filler: Filler = filler
         if shape is not None:
             self.init_data(shape, dtype)
 
-    def mirror(self, input_array, shape=None):
+    def mirror(self,
+               input_array: np.ndarray,
+               shape: typing.Optional[tuple] = None):
         # Create the data as a view of the input array. This is useful to save space and avoid duplication for data
         # layers.
         self._data = input_array.view()
         if shape is not None:
             self._data.shape = shape
+
+    def mirror_diff(self,
+                    input_array: np.ndarray,
+                    shape: typing.Optional[tuple] = None):
+        # Create the diff as a view of the input array's diff. This is useful to save space and avoid duplication for
+        # data layers.
+        self._diff = input_array.view()
+        if shape is not None:
+            self._diff.shape = shape
 
     def has_data(self):
         """Checks if the blob has data."""
@@ -62,7 +97,9 @@ class Blob(object):
     def update(self):
         self._data += self._diff
 
-    def resize(self, shape, dtype):
+    def resize(self,
+               shape: tuple,
+               dtype: np.dtype):
         if self._data.shape == shape and self._data.dtype == dtype:
             pass
         else:
@@ -71,7 +108,9 @@ class Blob(object):
             logging.info('Blob resized to {0} dtype {1}'.format(str(shape), str(dtype)))
             self._data = np.zeros(shape, dtype=dtype)
 
-    def init_data(self, shape, dtype=np.float64):
+    def init_data(self,
+                  shape: tuple,
+                  dtype: np.dtype = np.float64):
         """
         Initialize the data matrix if necessary. The filler will be always called even if no reallocation of data takes
         place.
@@ -114,11 +153,13 @@ class Layer(object):
         Necessary argument:
             name: the name of the layer.
         """
-        self.spec = kwargs
-        self.name = self.spec['name']
-        self._param = []
+        self.spec: dict = kwargs
+        self.name: str = self.spec['name']
+        self._param: list = []
 
-    def forward(self, bottom, top):
+    def forward(self,
+                bottom: typing.List[Blob],
+                top: typing.List[Blob]):
         """
         Computes the forward pass.
 
@@ -128,7 +169,10 @@ class Layer(object):
         """
         raise NotImplementedError
 
-    def backward(self, bottom, top, propagate_down):
+    def backward(self,
+                 bottom: typing.List[Blob],
+                 top: typing.List[Blob],
+                 propagate_down: bool):
         """
         Computes the backward pass.
 
@@ -162,7 +206,9 @@ class DataLayer(Layer):
     A Layer that generates data.
     """
 
-    def forward(self, bottom, top):
+    def forward(self,
+                bottom: typing.List[Blob],
+                top: typing.List[Blob]):
         """
         Generates the data.
 
@@ -170,7 +216,10 @@ class DataLayer(Layer):
         """
         raise NotImplementedError
 
-    def backward(self, bottom, top, propagate_down):
+    def backward(self,
+                 bottom: typing.List[Blob],
+                 top: typing.List[Blob],
+                 propagate_down: bool):
         """
         No gradient needs to be computed for data.
 
@@ -194,12 +243,17 @@ class LossLayer(Layer):
 
     def __init__(self, **kwargs):
         Layer.__init__(self, **kwargs)
-        self._loss = 0.
+        self._loss: float = 0.
 
-    def forward(self, bottom, top):
+    def forward(self,
+                bottom: typing.List[Blob],
+                top: typing.List[Blob]):
         raise NotImplementedError
 
-    def backward(self, bottom, top, propagate_down):
+    def backward(self,
+                 bottom: typing.List[Blob],
+                 top: typing.List[Blob],
+                 propagate_down: bool):
         return self._loss
 
     def update(self):
@@ -212,9 +266,9 @@ class Solver(object):
     """
 
     def __init__(self, **kwargs):
-        self.spec = kwargs
+        self.spec: dict = kwargs
 
-    def solve(self, net):
+    def solve(self, my_net: net.Net):
         """
         The solve function takes a net as an input, and optimizes its parameters.
         """
@@ -230,28 +284,14 @@ class Regularizer(object):
         """
         Initializes a regularizer. A regularizer need a necessary keyword 'weight'
         """
-        self.spec = kwargs
-        self._weight = self.spec['weight']
+        self.spec: dict = kwargs
+        self._weight: float = self.spec['weight']
 
-    def reg(self, blob, num_data):
+    def reg(self, blob: Blob, num_data):
         """
         Compute the regularization term from the blob's data field, and add the regularization term to its diff directly
         """
         raise NotImplementedError
 
 
-class Filler(object):
-    """
-    This is the class that implements util functions to fill a blob.
 
-    A filler implements the fill() function that takes a blob as the input, and fills the blob's data() field.
-    """
-
-    def __init__(self, **kwargs):
-        """
-        simply get the spec.
-        """
-        self.spec = kwargs
-
-    def fill(self, mat):
-        raise NotImplementedError

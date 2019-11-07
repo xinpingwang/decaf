@@ -1,5 +1,7 @@
 """Implements the padding layer."""
-from decaf.base import Layer
+import typing
+
+from decaf.base import Layer, Blob
 
 
 class PaddingLayer(Layer):
@@ -14,15 +16,17 @@ class PaddingLayer(Layer):
             'value': the value inserted to the padded area. Default 0.
         """
         Layer.__init__(self, **kwargs)
-        self._pad = self.spec['pad']
-        self._value = self.spec.get('value', 0)
+        self._pad: int = self.spec['pad']
+        self._value: float = self.spec.get('value', 0)
         if self._pad < 0:
             raise ValueError('Padding should be non-negative.')
 
-    def forward(self, bottom, top):
+    def forward(self,
+                bottom: typing.List[Blob],
+                top: typing.List[Blob]):
         """Computes the forward pass."""
         if self._pad == 0:
-            top[0].mirror(bottom[0])
+            top[0].mirror(bottom[0].data())
             return
         features = bottom[0].data()
         pad = self._pad
@@ -33,7 +37,10 @@ class PaddingLayer(Layer):
         output[:] = self._value
         output[:, pad:-pad, pad:-pad] = features
 
-    def backward(self, bottom, top, propagate_down):
+    def backward(self,
+                 bottom: typing.List[Blob],
+                 top: typing.List[Blob],
+                 propagate_down: bool):
         """Computes the backward pass."""
         if not propagate_down:
             return 0.

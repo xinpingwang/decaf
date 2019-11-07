@@ -1,4 +1,7 @@
-from decaf.base import DataLayer
+import typing
+import numpy as np
+
+from decaf.base import DataLayer, Blob
 
 
 class NdArrayDataLayer(DataLayer):
@@ -14,9 +17,11 @@ class NdArrayDataLayer(DataLayer):
         The number of arrays should be identical to the number of output blobs.
         """
         DataLayer.__init__(self, **kwargs)
-        self._sources = self.spec['sources']
+        self._sources: typing.List[np.ndarray] = self.spec['sources']
 
-    def forward(self, bottom, top):
+    def forward(self,
+                bottom: typing.List[Blob],
+                top: typing.List[Blob]):
         """
         Generates the data.
         """

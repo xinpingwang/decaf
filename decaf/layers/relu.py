@@ -1,5 +1,8 @@
 import numpy as np
+import typing
+
 from decaf import base
+from decaf.base import Blob
 
 
 class ReLULayer(base.Layer):
@@ -13,7 +16,9 @@ class ReLULayer(base.Layer):
         """
         base.Layer.__init__(self, **kwargs)
 
-    def forward(self, bottom, top):
+    def forward(self,
+                bottom: typing.List[Blob],
+                top: typing.List[Blob]):
         """
         Compute the forward pass.
         """
@@ -22,7 +27,10 @@ class ReLULayer(base.Layer):
         output[:] = features
         output *= (features > 0)
 
-    def backward(self, bottom, top, propagate_down):
+    def backward(self,
+                 bottom: typing.List[Blob],
+                 top: typing.List[Blob],
+                 propagate_down: bool):
         """
         Compute the backward pass.
         """

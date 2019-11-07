@@ -1,6 +1,8 @@
 from collections import defaultdict
-from decaf.base import DecafError, Blob
+import typing
 import networkx as nx
+
+from decaf.base import DecafError, Blob, Layer
 
 
 class InvalidNetworkError(DecafError):
@@ -16,18 +18,21 @@ class Net(object):
     """
 
     def __init__(self):
-        self._graph = nx.DiGraph()
-        self._blobs = defaultdict(Blob)
-        self._layers = {}
-        self._needs = {}
-        self._provides = {}
+        self._graph: nx.DiGraph = nx.DiGraph()
+        self._blobs: dict = defaultdict(Blob)
+        self._layers: dict = {}
+        self._needs: dict = {}
+        self._provides: dict = {}
         # The topological order to execute the layer.
-        self._forward_order = None
-        self._backward_order = None
-        self_params = None
-        self._finished = False
+        self._forward_order: typing.Optional[typing.List[Layer]] = None
+        self._backward_order: typing.Optional[typing.List[Layer]] = None
+        self._params: typing.Optional[list] = None
+        self._finished: bool = False
 
-    def add_layer(self, layer, needs=[], provides=[]):
+    def add_layer(self,
+                  layer: Layer,
+                  needs: list = [],
+                  provides: list = []):
         """
         Add a layer to the current network.
 

@@ -1,10 +1,10 @@
 """Implements basic regularizers"""
-from decaf.base import Regularizer
+from decaf.base import Regularizer, Blob
 import numpy as np
 
 
 class L1Regularizer(Regularizer):
-    def reg(self, blob, num_data):
+    def reg(self, blob: Blob, num_data):
         data = blob.data()
         diff = blob.diff()
         diff += self._weight * num_data * np.sign(data)
@@ -12,7 +12,7 @@ class L1Regularizer(Regularizer):
 
 
 class L2Regularizer(Regularizer):
-    def reg(self, blob, num_data):
+    def reg(self, blob: Blob, num_data):
         data = blob.data()
         diff = blob.diff()
         diff += self._weight * num_data * 2. * data

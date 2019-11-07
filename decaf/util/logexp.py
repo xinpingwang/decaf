@@ -1,7 +1,9 @@
 import numpy as np
+import typing
 
 
-def exp(mat, out=None):
+def exp(mat: np.ndarray,
+        out: typing.Optional[np.ndarray] = None):
     """
     A (hacky) safe exp that avoids overflowing
 
@@ -18,7 +20,8 @@ def exp(mat, out=None):
     return out
 
 
-def log(mat, out=None):
+def log(mat: np.ndarray,
+        out: typing.Optional[np.ndarray] = None):
     """
     A (hacky) safe log that avoid nans
 

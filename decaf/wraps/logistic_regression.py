@@ -7,7 +7,9 @@ from decaf.optimization import core_solvers
 from decaf.util import blasdot
 
 
-def logistic_regression(features, target, reg_weight=0.):
+def logistic_regression(features: np.ndarray,
+                        target: np.ndarray,
+                        reg_weight=0.):
     """
     Carry out a logistic regression given features and target value.
 

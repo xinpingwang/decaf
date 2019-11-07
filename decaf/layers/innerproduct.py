@@ -1,3 +1,5 @@
+import typing
+
 from decaf.base import Layer, Blob
 from decaf.base import InvalidLayerError
 from decaf.util import blasdot
@@ -23,7 +25,9 @@ class InnerProductLayer(Layer):
         else:
             self._param = [self._weight]
 
-    def forward(self, bottom, top):
+    def forward(self,
+                bottom: typing.List[Blob],
+                top: typing.List[Blob]):
         """Computes the forward pass"""
         features = bottom[0].data()
         if features.ndim > 2:
@@ -42,7 +46,10 @@ class InnerProductLayer(Layer):
             output += self._bias.data()
         return 0.
 
-    def backward(self, bottom, top, propagate_down):
+    def backward(self,
+                 bottom: typing.List[Blob],
+                 top: typing.List[Blob],
+                 propagate_down: bool):
         """Computes the backward pass."""
         top_diff = top[0].diff()
         features = bottom[0].data()

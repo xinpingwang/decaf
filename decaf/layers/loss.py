@@ -1,3 +1,5 @@
+import typing
+
 from decaf.base import LossLayer, Blob
 from decaf.util import logexp
 import numpy as np
@@ -6,7 +8,9 @@ import numpy as np
 class SquaredLossLayer(LossLayer):
     """The squared loss."""
 
-    def forward(self, bottom, top):
+    def forward(self,
+                bottom: typing.List[Blob],
+                top: typing.List[Blob]):
         """
         Forward emits the loss, and computes the gradient as well.
         """
@@ -28,9 +32,11 @@ class MultinomialLogisticLossLayer(LossLayer):
 
     def __init__(self, **kwargs):
         LossLayer.__init__(self, **kwargs)
-        self._prob = Blob()
+        self._prob: Blob = Blob()
 
-    def forward(self, bottom, top):
+    def forward(self,
+                bottom: typing.List[Blob],
+                top: typing.List[Blob]):
         pred = bottom[0].data()
         prob = self._prob.init_data(pred.shape, pred.dtype)
         prob[:] = pred

@@ -4,6 +4,7 @@ util.py implements some python-generic utilities.
 
 import time
 
+
 class Timer(object):
     """
     Timer implements some sugar functions that works like a stopwatch.
@@ -13,7 +14,8 @@ class Timer(object):
     timer.total() returns the total time elapsed since the last reset
     """
 
-    def __init__(self, template='{0}h{1}m{2:.2f}s'):
+    def __init__(self,
+                 template: str = '{0}h{1}m{2:.2f}s'):
         """
         Initializes a timer.
 
@@ -26,7 +28,8 @@ class Timer(object):
         if template:
             self._template = template
 
-    def _format(self, timeval):
+    def _format(self,
+                timeval: float):
         """
         format the time value according to the template
         """
@@ -40,7 +43,8 @@ class Timer(object):
         self._total = time.time()
         self._lap = time.time()
 
-    def lap(self, use_template=True):
+    def lap(self,
+            use_template: bool = True):
         """
         Report the elapsed time of the current lap, and start counting the next lap.
 
@@ -55,7 +59,8 @@ class Timer(object):
         else:
             return diff
 
-    def total(self, use_template=True):
+    def total(self,
+              use_template: bool = True):
         """
         Report the total elapsed time of the timer.
 

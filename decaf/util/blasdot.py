@@ -1,8 +1,12 @@
 import numpy as np
+import typing
 from scipy.linalg import blas
 
 
-def _gemm_f_contiguous(alpha, A, B, out):
+def _gemm_f_contiguous(alpha: float,
+                       A: np.ndarray,
+                       B: np.ndarray,
+                       out: np.ndarray):
     """
     A gemm function that uses scipy fblas functions, avoiding matrix copy when the input is transposed.
 
@@ -34,7 +38,10 @@ def _gemm_f_contiguous(alpha, A, B, out):
     return out
 
 
-def _gemm_c_contiguous(alpha, A, B, out):
+def _gemm_c_contiguous(alpha: float,
+                       A: np.ndarray,
+                       B: np.ndarray,
+                       out: np.ndarray):
     """
     A wrapper that computes C_CONTIGUOUS gemm results.
     """
@@ -42,7 +49,9 @@ def _gemm_c_contiguous(alpha, A, B, out):
     return out
 
 
-def dot(A, B, out=None):
+def dot(A: np.ndarray,
+        B: np.ndarray,
+        out: typing.Optional[np.ndarray] = None):
     """
     A simple wrapper that mimics np.dot (if A and B are both matrices!). This function solves the problem that np.dot
     copies matrices when working on transposed matrices.
@@ -57,6 +66,6 @@ def dot(A, B, out=None):
         TypeError: if the type of matrices is wrong.
     """
     if out is None:
-        out = np.empty((A.shape[0],B.shape[1]), max(A.dtype, B.dtype))
+        out = np.empty((A.shape[0], B.shape[1]), max(A.dtype, B.dtype))
     out = _gemm_c_contiguous(1.0, A, B, out=out)
     return out

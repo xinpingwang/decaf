@@ -1,6 +1,10 @@
 """Implements the im2col layer."""
-from decaf.base import Layer
+import typing
+
+from decaf.base import Layer, Blob
 from decaf.layers.cpp import wrapper
+
+import numpy as np
 
 
 class Im2colLayer(Layer):
@@ -19,14 +23,15 @@ class Im2colLayer(Layer):
         (width-psize)/stride+1, nchannels*psize*psize].
         """
         Layer.__init__(self, **kwargs)
-        self._psize = self.spec['psize']
-        self._stride = self.spec['stride']
+        self._psize: int = self.spec['psize']
+        self._stride: int = self.spec['stride']
         if self._psize <= 1:
             raise ValueError('Padding should be larger than 1.')
         if self._stride < 1:
             raise ValueError('Stride should be larger than 0.')
 
-    def _analyze_shape(self, features):
+    def _analyze_shape(self,
+                       features: np.ndarray):
         num, height, width = features.shape[:3]
         channels = 1
         if features.ndim == 4:
@@ -37,7 +42,9 @@ class Im2colLayer(Layer):
                      channels * self._psize * self._psize)
         return num, height, width, channels, new_shape
 
-    def forward(self, bottom, top):
+    def forward(self,
+                bottom: typing.List[Blob],
+                top: typing.List[Blob]):
         """Computes the forward pass"""
         # Get features and output
         features = bottom[0].data()
@@ -46,7 +53,10 @@ class Im2colLayer(Layer):
         for i in range(num):
             wrapper.im2col(features[i], height, width, channels, self._psize, self._stride, output[i])
 
-    def backward(self, bottom, top, propagate_down):
+    def backward(self,
+                 bottom: typing.List[Blob],
+                 top: typing.List[Blob],
+                 propagate_down: bool):
         """Compute the backward pass"""
         if not propagate_down:
             return 0.

@@ -1,4 +1,6 @@
-from decaf.base import Layer, Blob
+import typing
+
+from decaf.base import Layer, Blob, Regularizer, Filler
 from decaf.layers import padding, im2col, innerproduct
 
 
@@ -29,27 +31,27 @@ class ConvolutionLayer(Layer):
         same size as the data, we require the 'same' mode to be paired with an odd number as the kernel size.
         """
         Layer.__init__(self, **kwargs)
-        self._num_kernels = self.spec['num_kernels']
-        self._ksize = self.spec['ksize']
-        self._stride = self.spec['stride']
-        self._mode = self.spec['mode']
-        self._reg = self.spec.get('reg', None)
-        self._filler = self.spec.get('filler', None)
-        self._memory = self.spec.get('memory', 1e7)
+        self._num_kernels: int = self.spec['num_kernels']
+        self._ksize: int = self.spec['ksize']
+        self._stride: int = self.spec['stride']
+        self._mode: str = self.spec['mode']
+        self._reg: typing.Optional[Regularizer] = self.spec.get('reg', None)
+        self._filler: typing.Optional[Filler] = self.spec.get('filler', None)
+        self._memory: int = self.spec.get('memory', 1e7)
         if self._ksize <= 1:
             raise ValueError('Invalid kernel size. Kernel size should > 1.')
         if self._mode == 'same' and self._ksize % 2 == 0:
             raise ValueError('The "same" mode should have an odd kernel size.')
         # since the im2col operation often creates large intermediate matrices, we will have intermediate blobs to store
         # them.
-        self._single_data = [Blob()]
-        self._padded = [Blob()]
-        self._col = [Blob()]
-        self._conv_out = [Blob()]
+        self._single_data: typing.List[Blob] = [Blob()]
+        self._padded: typing.List[Blob] = [Blob()]
+        self._col: typing.List[Blob] = [Blob()]
+        self._conv_out: typing.List[Blob] = [Blob()]
         # set up the parameter - it's the same as the inner product param, but we will have our own copy since the inner
         # product param (especially the diff) will be overwritten when we run on an per-image basis.
-        self._kernels = Blob(filler=self._filler)
-        self._param = [self._kernels]
+        self._kernels: Blob = Blob(filler=self._filler)
+        self._param: typing.List[Blob] = [self._kernels]
         # Constructs the sub layers that actually carry out the convolution.
         if self._mode == 'valid':
             pad = 0
@@ -60,10 +62,12 @@ class ConvolutionLayer(Layer):
         else:
             raise ValueError('Unknown mode: {}'.format(self._mode))
         # construct the layers
-        self._pad_layer = padding.PaddingLayer(name=self.name + '_pad', pad=pad)
-        self._im2col_layer = im2col.Im2colLayer(name=self.name + '_im2col', psize=self._ksize, stride=self._stride)
-        self._ip_layer = innerproduct.InnerProductLayer(name=self.name + '_ip', num_output=self._num_kernels,
-                                                        bias=False)
+        self._pad_layer: padding.PaddingLayer = padding.PaddingLayer(name=self.name + '_pad', pad=pad)
+        self._im2col_layer: im2col.Im2colLayer = im2col.Im2colLayer(name=self.name + '_im2col',
+                                                                    psize=self._ksize,
+                                                                    stride=self._stride)
+        self._ip_layer: innerproduct.InnerProductLayer = \
+            innerproduct.InnerProductLayer(name=self.name + '_ip', num_output=self._num_kernels, bias=False)
 
     def __getstate__(self):
         """When pickling, we will remove the intermediate data."""
@@ -73,7 +77,9 @@ class ConvolutionLayer(Layer):
         self._conv_out = [Blob()]
         return self.__dict__
 
-    def forward(self, bottom, top):
+    def forward(self,
+                bottom: typing.List[Blob],
+                top: typing.List[Blob]):
         """Runs the forward pass."""
         # cache objects to avoid the [0] index.
         single_data = self._single_data[0]
@@ -102,7 +108,10 @@ class ConvolutionLayer(Layer):
             top_data[i] = conv_out_blob.data()
         return
 
-    def backward(self, bottom, top, propagate_down):
+    def backward(self,
+                 bottom: typing.List[Blob],
+                 top: typing.List[Blob],
+                 propagate_down: bool):
         """Runs the backward pass."""
         single_data = self._single_data[0]
         conv_out_blob = self._conv_out[0]
